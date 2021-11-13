@@ -3,6 +3,9 @@ package com.example.tz
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.util.Log
+import android.widget.Toast
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.Response
@@ -17,51 +20,32 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var networkHelper: NetworkHelper
     lateinit var requestQueue: RequestQueue
+    lateinit var handler:Handler
 
-    override fun onResume() {
-        super.onResume()
-        if (networkHelper.isNetworkConnected()) {
-            txt_connection.text = "Connected"
 
-            requestQueue = Volley.newRequestQueue(this)
-
-        } else {
-            txt_connection.text = "Disconnected"
-        }
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         networkHelper = NetworkHelper(this)
+        handler = Handler()
+        handler.postDelayed(runnable,1000)
+        requestQueue = Volley.newRequestQueue(this)
 
 
         myIp.setOnClickListener {
-            fetchIpLoad()
+            if(networkHelper.isNetworkConnected()) {
+                if (txt.text.toString().isNotEmpty()) {
+                    fetchIpLoad()
+                } else {
+                    Toast.makeText(this, "Link is empty", Toast.LENGTH_SHORT).show()
+                } 
+            } else {
+                Toast.makeText(this, "Network is unconnection, please check again...", Toast.LENGTH_SHORT).show()
+            }
 
         }
     }
-/*
-    private fun isNetworkConnected(): Boolean {
-        val connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            //SDK over the  23
-
-            val activeNetwork = connectivityManager.activeNetwork
-            val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-
-            return networkCapabilities != null && networkCapabilities.hasCapability(
-                NetworkCapabilities.NET_CAPABILITY_INTERNET
-            )
-        } else {
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo
-
-            return activeNetworkInfo != null && activeNetworkInfo.isConnected
-        }
-    }*/
-
 
     private fun fetchIpLoad() {
         val jsonObjectRequest =
@@ -84,4 +68,21 @@ class MainActivity : AppCompatActivity() {
         requestQueue.add(jsonObjectRequest)
         txt.text.clear()
     }
+
+
+    val runnable = object : Runnable {
+        override fun run() {
+            networkHelper = NetworkHelper(this@MainActivity)
+            if (networkHelper.isNetworkConnected()) {
+                txt_connection.text = "Connected"
+                Log.d("NETWORK", "Connected")
+            } else {
+               txt_connection.text = "Disconnected"
+                Log.d("NETWORK", "Disconnected")
+            }
+
+            handler.postDelayed(this, 1000)
+        }
+    }
+
 }
